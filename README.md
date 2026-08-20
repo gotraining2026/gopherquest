@@ -1,0 +1,21 @@
+# GopherQuest
+
+GopherQuest is a local, single-player Go learning game. The Cobra CLI talks to
+a contract-first HTTP API, which persists campaigns in PostgreSQL and uses the
+Go Module Proxy for live module information.
+
+## Status
+
+- [x] Architecture context diagram
+- [x] Go module and pinned `ogen`/`sqlc` tooling
+- [x] OpenAPI 3.0.3 contract
+- [x] Generated `ogen` server and client
+- [x] PostgreSQL schema, queries, Compose health check, and generated `sqlc` code
+- [x] Campaign domain values, validation, errors, stages, and tests
+- [ ] Go Module Proxy client and fixture tests
+- [ ] PostgreSQL domain adapter and campaign service
+- [ ] CRUD HTTP handlers and routing
+- [ ] Challenge answer evaluation and progress updates
+- [ ] Cobra campaign commands
+- [ ] Structured request logging and runtime configuration
+- [ ] API container, coverage closure, final checks, and demo documentation
