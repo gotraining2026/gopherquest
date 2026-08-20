@@ -1,0 +1,7 @@
+generator:
+  features:
+    enable:
+      - paths/server
+      - paths/client
+      - ogen/unimplemented
+      - ogen/otel
