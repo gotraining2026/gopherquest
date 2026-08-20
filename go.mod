@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	github.com/go-faster/errors v0.8.0
 	github.com/go-faster/jx v1.2.0
+	github.com/lib/pq v1.10.9
 	github.com/ogen-go/ogen v1.24.0
 	github.com/sqlc-dev/sqlc v1.30.0
 )
