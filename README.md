@@ -12,8 +12,8 @@ Go Module Proxy for live module information.
 - [x] Generated `ogen` server and client
 - [x] PostgreSQL schema, queries, Compose health check, and generated `sqlc` code
 - [x] Campaign domain values, validation, errors, stages, and tests
-- [ ] Go Module Proxy client and fixture tests
-- [ ] PostgreSQL domain adapter and campaign service
+- [x] Go Module Proxy client and fixture tests
+- [x] PostgreSQL domain adapter and campaign service
 - [ ] CRUD HTTP handlers and routing
 - [ ] Challenge answer evaluation and progress updates
 - [ ] Cobra campaign commands
