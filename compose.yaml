@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: gopherquest
+      POSTGRES_USER: gopherquest
+      POSTGRES_PASSWORD: gopherquest
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./sql/schema/001_campaigns.sql:/docker-entrypoint-initdb.d/001_campaigns.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gopherquest -d gopherquest"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
