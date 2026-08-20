@@ -9,4 +9,6 @@ var (
 	ErrInvalid = errors.New("invalid campaign")
 	// ErrWrongStage indicates that an attempt does not match current progress.
 	ErrWrongStage = errors.New("attempt does not match current stage")
+	// ErrProvider indicates that the external module provider failed.
+	ErrProvider = errors.New("module provider failure")
 )
