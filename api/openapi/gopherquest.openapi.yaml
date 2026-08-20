@@ -1,0 +1,346 @@
+openapi: 3.0.3
+info:
+  title: GopherQuest API
+  version: 0.1.0
+  description: Contract-first API for the local GopherQuest learning game.
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /campaigns:
+    post:
+      operationId: createCampaign
+      summary: Create a campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignRequest'
+      responses:
+        '201':
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        default:
+          $ref: '#/components/responses/InternalError'
+    get:
+      operationId: listCampaigns
+      summary: List campaigns
+      responses:
+        '200':
+          description: Campaigns returned without live enrichment
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Campaign'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        default:
+          $ref: '#/components/responses/InternalError'
+  /campaigns/{id}:
+    parameters:
+      - $ref: '#/components/parameters/CampaignID'
+    get:
+      operationId: getCampaign
+      summary: Get an enriched campaign
+      responses:
+        '200':
+          description: Campaign with live module information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        default:
+          $ref: '#/components/responses/InternalError'
+    put:
+      operationId: updateCampaign
+      summary: Replace editable campaign fields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCampaignRequest'
+      responses:
+        '200':
+          description: Campaign updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        default:
+          $ref: '#/components/responses/InternalError'
+    delete:
+      operationId: deleteCampaign
+      summary: Delete a campaign
+      responses:
+        '204':
+          description: Campaign deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        default:
+          $ref: '#/components/responses/InternalError'
+  /campaigns/{id}/attempts:
+    parameters:
+      - $ref: '#/components/parameters/CampaignID'
+    post:
+      operationId: submitAttempt
+      summary: Submit an answer for the current challenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttemptRequest'
+      responses:
+        '200':
+          description: Attempt evaluated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttemptResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        default:
+          $ref: '#/components/responses/InternalError'
+components:
+  parameters:
+    CampaignID:
+      name: id
+      in: path
+      required: true
+      description: Stable campaign identifier
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Campaign does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Attempt or update conflicts with campaign state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadGateway:
+      description: External provider failed or returned unusable data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Unexpected internal failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    CreateCampaignRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - playerName
+        - title
+        - modulePath
+        - difficulty
+      properties:
+        playerName:
+          type: string
+          minLength: 1
+          maxLength: 40
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        modulePath:
+          $ref: '#/components/schemas/ModulePath'
+        difficulty:
+          $ref: '#/components/schemas/Difficulty'
+    UpdateCampaignRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - playerName
+        - title
+        - modulePath
+        - difficulty
+      properties:
+        playerName:
+          type: string
+          minLength: 1
+          maxLength: 40
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        modulePath:
+          $ref: '#/components/schemas/ModulePath'
+        difficulty:
+          $ref: '#/components/schemas/Difficulty'
+    Campaign:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - playerName
+        - title
+        - modulePath
+        - difficulty
+        - stage
+        - score
+        - createdAt
+        - updatedAt
+        - moduleInfo
+        - currentChallenge
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+        playerName:
+          type: string
+        title:
+          type: string
+        modulePath:
+          type: string
+        difficulty:
+          $ref: '#/components/schemas/Difficulty'
+        stage:
+          $ref: '#/components/schemas/Stage'
+        score:
+          type: integer
+          format: int32
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        moduleInfo:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ModuleInfo'
+        currentChallenge:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Challenge'
+    Difficulty:
+      type: string
+      enum:
+        - beginner
+        - intermediate
+        - advanced
+    Stage:
+      type: string
+      enum:
+        - module
+        - errors
+        - channel
+        - complete
+    ModulePath:
+      type: string
+      minLength: 3
+      maxLength: 200
+      pattern: '^github\.com/[a-z0-9][a-z0-9.-]*/[a-z0-9][a-z0-9.-]*(/v[2-9][0-9]*)?$'
+    ModuleInfo:
+      type: object
+      additionalProperties: false
+      required:
+        - latestVersion
+        - publishedAt
+      properties:
+        latestVersion:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+    Challenge:
+      type: object
+      additionalProperties: false
+      required:
+        - stage
+        - prompt
+        - hint
+      properties:
+        stage:
+          $ref: '#/components/schemas/Stage'
+        prompt:
+          type: string
+        hint:
+          type: string
+    AttemptRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - answer
+      properties:
+        answer:
+          type: string
+          minLength: 1
+          maxLength: 80
+    AttemptResult:
+      type: object
+      additionalProperties: false
+      required:
+        - correct
+        - message
+        - campaign
+      properties:
+        correct:
+          type: boolean
+        message:
+          type: string
+        campaign:
+          $ref: '#/components/schemas/Campaign'
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          type: string

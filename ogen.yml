@@ -4,4 +4,5 @@ generator:
       - paths/server
       - paths/client
       - ogen/unimplemented
+    disable:
       - ogen/otel
