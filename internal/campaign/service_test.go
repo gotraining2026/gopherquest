@@ -8,13 +8,16 @@ import (
 )
 
 type fakeStore struct {
-	created NewCampaign
-	item    Campaign
-	items   []Campaign
-	err     error
+	created     NewCampaign
+	updated     UpdateCampaign
+	item        Campaign
+	items       []Campaign
+	err         error
+	createCalls int
 }
 
 func (f *fakeStore) Create(_ context.Context, input NewCampaign) (Campaign, error) {
+	f.createCalls++
 	f.created = input
 	if f.err != nil {
 		return Campaign{}, f.err
@@ -36,7 +39,8 @@ func (f *fakeStore) Get(context.Context, int64) (Campaign, error) {
 	return f.item, nil
 }
 
-func (f *fakeStore) Update(context.Context, int64, UpdateCampaign) (Campaign, error) {
+func (f *fakeStore) Update(_ context.Context, _ int64, input UpdateCampaign) (Campaign, error) {
+	f.updated = input
 	if f.err != nil {
 		return Campaign{}, f.err
 	}
@@ -81,6 +85,24 @@ func TestServiceCreateNormalizesAndAddsChallenge(t *testing.T) {
 	}
 }
 
+func TestServiceCreateRejectsInvalidInputBeforeStore(t *testing.T) {
+	store := &fakeStore{}
+	service := NewService(store, nil)
+
+	_, err := service.Create(context.Background(), NewCampaign{
+		PlayerName: "player",
+		Title:      "title",
+		ModulePath: "not-a-module",
+		Difficulty: DifficultyBeginner,
+	})
+	if !errors.Is(err, ErrInvalid) {
+		t.Fatalf("Create error = %v, want ErrInvalid", err)
+	}
+	if store.createCalls != 0 {
+		t.Fatalf("Create called store %d times, want 0", store.createCalls)
+	}
+}
+
 func TestServiceGetEnrichesCampaign(t *testing.T) {
 	publishedAt := time.Date(2026, time.August, 20, 12, 0, 0, 0, time.UTC)
 	service := NewService(
@@ -109,6 +131,36 @@ func TestServiceListDoesNotRequireProvider(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].CurrentChallenge == nil {
 		t.Fatalf("List result = %#v", got)
+	}
+}
+
+func TestServiceUpdateNormalizesInput(t *testing.T) {
+	store := &fakeStore{item: Campaign{ID: 1, Stage: StageModule}}
+	service := NewService(store, nil)
+
+	_, err := service.Update(context.Background(), 1, UpdateCampaign{
+		PlayerName: " player ",
+		Title:      " title ",
+		ModulePath: " github.com/spf13/cobra ",
+		Difficulty: DifficultyIntermediate,
+	})
+	if err != nil {
+		t.Fatalf("Update returned error: %v", err)
+	}
+	if store.updated.PlayerName != "player" || store.updated.Title != "title" || store.updated.ModulePath != "github.com/spf13/cobra" {
+		t.Fatalf("Update input = %#v", store.updated)
+	}
+}
+
+func TestServiceGetWrapsProviderError(t *testing.T) {
+	service := NewService(
+		&fakeStore{item: Campaign{ID: 1, ModulePath: "github.com/spf13/cobra"}},
+		&fakeModuleLookup{err: ErrProvider},
+	)
+
+	_, err := service.Get(context.Background(), 1)
+	if !errors.Is(err, ErrProvider) {
+		t.Fatalf("Get error = %v, want ErrProvider", err)
 	}
 }
 
