@@ -14,7 +14,7 @@ Go Module Proxy for live module information.
 - [x] Campaign domain values, validation, errors, stages, and tests
 - [x] Go Module Proxy client and fixture tests
 - [x] PostgreSQL domain adapter and campaign service
-- [ ] CRUD HTTP handlers and routing
+- [x] CRUD HTTP handlers, routing, and health check
 - [ ] Challenge answer evaluation and progress updates
 - [ ] Cobra campaign commands
 - [ ] Structured request logging and runtime configuration
