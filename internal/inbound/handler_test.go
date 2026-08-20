@@ -206,6 +206,50 @@ func TestCRUDErrors(t *testing.T) {
 	resp.Body.Close()
 }
 
+func TestSubmitAttemptProgression(t *testing.T) {
+	ts := newTestServer(t)
+	client := ts.Client()
+
+	createBody := `{"playerName":"Jiayang","title":"Protocol Run","modulePath":"github.com/spf13/cobra","difficulty":"beginner"}`
+	resp := doRequest(t, client, http.MethodPost, ts.URL+"/campaigns", createBody)
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("create status = %d, want %d", resp.StatusCode, http.StatusCreated)
+	}
+	resp.Body.Close()
+
+	tests := []struct {
+		answer  string
+		correct bool
+		stage   string
+		score   float64
+	}{
+		{answer: "v2", correct: false, stage: "module", score: 0},
+		{answer: "v1", correct: true, stage: "errors", score: 100},
+		{answer: "errors.Is", correct: true, stage: "channel", score: 200},
+		{answer: "channel", correct: true, stage: "complete", score: 400},
+	}
+
+	for _, tt := range tests {
+		body := `{"answer":"` + tt.answer + `"}`
+		resp := doRequest(t, client, http.MethodPost, ts.URL+"/campaigns/1/attempts", body)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("answer %q status = %d, want %d", tt.answer, resp.StatusCode, http.StatusOK)
+		}
+		var result map[string]any
+		decodeJSON(t, resp, &result)
+		if result["correct"] != tt.correct {
+			t.Fatalf("answer %q correct = %#v, want %v", tt.answer, result["correct"], tt.correct)
+		}
+		campaignBody, ok := result["campaign"].(map[string]any)
+		if !ok {
+			t.Fatalf("answer %q campaign = %#v", tt.answer, result["campaign"])
+		}
+		if campaignBody["stage"] != tt.stage || campaignBody["score"] != tt.score {
+			t.Fatalf("answer %q campaign = %#v, want stage %q score %v", tt.answer, campaignBody, tt.stage, tt.score)
+		}
+	}
+}
+
 func TestStatusForError(t *testing.T) {
 	tests := []struct {
 		err    error

@@ -75,6 +75,13 @@ type Challenge struct {
 	Hint   string
 }
 
+// AttemptResult contains the answer result and the resulting campaign state.
+type AttemptResult struct {
+	Correct  bool
+	Message  string
+	Campaign Campaign
+}
+
 // Store persists campaigns and performs atomic stage advancement.
 type Store interface {
 	Create(context.Context, NewCampaign) (Campaign, error)

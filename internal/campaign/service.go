@@ -102,6 +102,49 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
+// Attempt evaluates and, when correct, atomically advances a campaign.
+func (s *Service) Attempt(ctx context.Context, id int64, answer string) (AttemptResult, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
+
+	item, err := s.store.Get(ctx, id)
+	if err != nil {
+		return AttemptResult{}, fmt.Errorf("get campaign %d for attempt: %w", id, err)
+	}
+	if item.Stage == StageComplete {
+		return AttemptResult{}, ErrWrongStage
+	}
+
+	var moduleInfo *ModuleInfo
+	if item.Stage == StageModule {
+		if s.moduleLookup == nil {
+			return AttemptResult{}, fmt.Errorf("load module info for campaign %d: %w", id, ErrProvider)
+		}
+		info, err := s.moduleLookup.Latest(ctx, item.ModulePath)
+		if err != nil {
+			return AttemptResult{}, fmt.Errorf("load module info for campaign %d: %w", id, err)
+		}
+		moduleInfo = &info
+	}
+
+	outcome, err := EvaluateAttempt(item.Stage, answer, moduleInfo, item.Difficulty)
+	if err != nil {
+		return AttemptResult{}, fmt.Errorf("evaluate campaign %d attempt: %w", id, err)
+	}
+	item.ModuleInfo = moduleInfo
+	item.CurrentChallenge = ChallengeFor(item.Stage)
+	if !outcome.Correct {
+		return AttemptResult{Correct: false, Message: outcome.Message, Campaign: item}, nil
+	}
+
+	advanced, err := s.store.Advance(ctx, id, item.Stage, outcome.Next, outcome.Points)
+	if err != nil {
+		return AttemptResult{}, fmt.Errorf("advance campaign %d after attempt: %w", id, err)
+	}
+	advanced.ModuleInfo = moduleInfo
+	return AttemptResult{Correct: true, Message: outcome.Message, Campaign: withChallenge(advanced)}, nil
+}
+
 func normalizeNew(input NewCampaign) NewCampaign {
 	input.PlayerName = strings.TrimSpace(input.PlayerName)
 	input.Title = strings.TrimSpace(input.Title)

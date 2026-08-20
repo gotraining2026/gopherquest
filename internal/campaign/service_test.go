@@ -8,12 +8,13 @@ import (
 )
 
 type fakeStore struct {
-	created     NewCampaign
-	updated     UpdateCampaign
-	item        Campaign
-	items       []Campaign
-	err         error
-	createCalls int
+	created      NewCampaign
+	updated      UpdateCampaign
+	item         Campaign
+	items        []Campaign
+	err          error
+	createCalls  int
+	advanceCalls int
 }
 
 func (f *fakeStore) Create(_ context.Context, input NewCampaign) (Campaign, error) {
@@ -51,8 +52,17 @@ func (f *fakeStore) Delete(context.Context, int64) error {
 	return f.err
 }
 
-func (f *fakeStore) Advance(context.Context, int64, Stage, Stage, int) (Campaign, error) {
-	return f.item, f.err
+func (f *fakeStore) Advance(_ context.Context, _ int64, expected, next Stage, points int) (Campaign, error) {
+	f.advanceCalls++
+	if f.err != nil {
+		return Campaign{}, f.err
+	}
+	if f.item.Stage != expected {
+		return Campaign{}, ErrWrongStage
+	}
+	f.item.Stage = next
+	f.item.Score += points
+	return f.item, nil
 }
 
 type fakeModuleLookup struct {
@@ -171,5 +181,44 @@ func TestServiceWrapsStoreErrors(t *testing.T) {
 	_, err := service.Get(context.Background(), 1)
 	if !errors.Is(err, storeErr) {
 		t.Fatalf("Get error = %v, want wrapped store error", err)
+	}
+}
+
+func TestServiceAttemptWrongAnswerDoesNotAdvance(t *testing.T) {
+	store := &fakeStore{item: Campaign{
+		ID:         1,
+		ModulePath: "github.com/spf13/cobra",
+		Difficulty: DifficultyBeginner,
+		Stage:      StageModule,
+	}}
+	service := NewService(store, &fakeModuleLookup{info: ModuleInfo{LatestVersion: "v1.10.2"}})
+
+	result, err := service.Attempt(context.Background(), 1, "v2")
+	if err != nil {
+		t.Fatalf("Attempt returned error: %v", err)
+	}
+	if result.Correct || store.advanceCalls != 0 || result.Campaign.Stage != StageModule {
+		t.Fatalf("wrong attempt result = %#v, advanceCalls = %d", result, store.advanceCalls)
+	}
+}
+
+func TestServiceAttemptCorrectAdvances(t *testing.T) {
+	store := &fakeStore{item: Campaign{
+		ID:         1,
+		ModulePath: "github.com/spf13/cobra",
+		Difficulty: DifficultyIntermediate,
+		Stage:      StageModule,
+	}}
+	service := NewService(store, &fakeModuleLookup{info: ModuleInfo{LatestVersion: "v1.10.2"}})
+
+	result, err := service.Attempt(context.Background(), 1, "v1")
+	if err != nil {
+		t.Fatalf("Attempt returned error: %v", err)
+	}
+	if !result.Correct || store.advanceCalls != 1 {
+		t.Fatalf("correct attempt result = %#v, advanceCalls = %d", result, store.advanceCalls)
+	}
+	if result.Campaign.Stage != StageErrors || result.Campaign.Score != 200 {
+		t.Fatalf("service result = %#v, want errors stage and 200 points", result.Campaign)
 	}
 }

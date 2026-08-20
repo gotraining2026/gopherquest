@@ -66,6 +66,20 @@ func (h *Handler) ListCampaigns(ctx context.Context) (api.ListCampaignsRes, erro
 	return &response, nil
 }
 
+// SubmitAttempt handles POST /campaigns/{id}/attempts.
+func (h *Handler) SubmitAttempt(ctx context.Context, req *api.AttemptRequest, params api.SubmitAttemptParams) (api.SubmitAttemptRes, error) {
+	result, err := h.service.Attempt(ctx, params.ID, req.Answer)
+	if err != nil {
+		return nil, err
+	}
+	response := api.AttemptResult{
+		Correct:  result.Correct,
+		Message:  result.Message,
+		Campaign: toWire(result.Campaign),
+	}
+	return &response, nil
+}
+
 // UpdateCampaign handles PUT /campaigns/{id}.
 func (h *Handler) UpdateCampaign(ctx context.Context, req *api.UpdateCampaignRequest, params api.UpdateCampaignParams) (api.UpdateCampaignRes, error) {
 	updated, err := h.service.Update(ctx, params.ID, campaign.UpdateCampaign{
