@@ -15,7 +15,9 @@ Go Module Proxy for live module information.
 - [x] Go Module Proxy client and fixture tests
 - [x] PostgreSQL domain adapter and campaign service
 - [x] CRUD HTTP handlers, routing, and health check
-- [ ] Challenge answer evaluation and progress updates
+- [x] Challenge answer evaluation and progress updates
 - [ ] Cobra campaign commands
-- [ ] Structured request logging and runtime configuration
-- [ ] API container, coverage closure, final checks, and demo documentation
+- [ ] Structured request logging
+- [x] Runtime configuration
+- [x] API container and Compose startup
+- [ ] Coverage closure, final checks, and demo documentation
