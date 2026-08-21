@@ -14,11 +14,21 @@ const queryTimeout = 3 * time.Second
 type Service struct {
 	store        Store
 	moduleLookup ModuleLookup
+	queryTimeout time.Duration
 }
 
 // NewService builds a campaign service over its consumed interfaces.
 func NewService(store Store, moduleLookup ModuleLookup) *Service {
-	return &Service{store: store, moduleLookup: moduleLookup}
+	return NewServiceWithTimeout(store, moduleLookup, queryTimeout)
+}
+
+// NewServiceWithTimeout builds a campaign service with a configured database
+// operation timeout.
+func NewServiceWithTimeout(store Store, moduleLookup ModuleLookup, timeout time.Duration) *Service {
+	if timeout <= 0 {
+		timeout = queryTimeout
+	}
+	return &Service{store: store, moduleLookup: moduleLookup, queryTimeout: timeout}
 }
 
 // Create validates and persists a campaign with normalized editable fields.
@@ -28,7 +38,7 @@ func (s *Service) Create(ctx context.Context, input NewCampaign) (Campaign, erro
 		return Campaign{}, err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	ctx, cancel := context.WithTimeout(ctx, s.queryTimeout)
 	defer cancel()
 
 	created, err := s.store.Create(ctx, input)
@@ -40,7 +50,7 @@ func (s *Service) Create(ctx context.Context, input NewCampaign) (Campaign, erro
 
 // List returns persisted campaigns without calling the external provider.
 func (s *Service) List(ctx context.Context) ([]Campaign, error) {
-	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	ctx, cancel := context.WithTimeout(ctx, s.queryTimeout)
 	defer cancel()
 
 	items, err := s.store.List(ctx)
@@ -55,7 +65,7 @@ func (s *Service) List(ctx context.Context) ([]Campaign, error) {
 
 // Get returns one campaign with live module enrichment.
 func (s *Service) Get(ctx context.Context, id int64) (Campaign, error) {
-	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	ctx, cancel := context.WithTimeout(ctx, s.queryTimeout)
 	defer cancel()
 
 	item, err := s.store.Get(ctx, id)
@@ -81,7 +91,7 @@ func (s *Service) Update(ctx context.Context, id int64, input UpdateCampaign) (C
 		return Campaign{}, err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	ctx, cancel := context.WithTimeout(ctx, s.queryTimeout)
 	defer cancel()
 
 	updated, err := s.store.Update(ctx, id, input)
@@ -93,7 +103,7 @@ func (s *Service) Update(ctx context.Context, id int64, input UpdateCampaign) (C
 
 // Delete removes a campaign.
 func (s *Service) Delete(ctx context.Context, id int64) error {
-	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	ctx, cancel := context.WithTimeout(ctx, s.queryTimeout)
 	defer cancel()
 
 	if err := s.store.Delete(ctx, id); err != nil {
@@ -104,7 +114,7 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 
 // Attempt evaluates and, when correct, atomically advances a campaign.
 func (s *Service) Attempt(ctx context.Context, id int64, answer string) (AttemptResult, error) {
-	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	ctx, cancel := context.WithTimeout(ctx, s.queryTimeout)
 	defer cancel()
 
 	item, err := s.store.Get(ctx, id)

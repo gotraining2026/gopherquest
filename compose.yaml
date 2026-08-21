@@ -1,4 +1,20 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://gopherquest:gopherquest@postgres:5432/gopherquest?sslmode=disable
+      GOPROXY_BASE_URL: https://proxy.golang.org
+      HTTP_TIMEOUT: 5s
+      DB_TIMEOUT: 3s
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     environment:
