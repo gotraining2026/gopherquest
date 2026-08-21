@@ -1,0 +1,27 @@
+flowchart LR
+    player[Player] -->|runs| cli["Cobra commands<br/>campaigns add / get / answer"]
+    cli -->|typed calls| client["ogen generated client"]
+    client -->|HTTP / JSON| router["ogen generated router / server"]
+    router -->|routes| handlers["Inbound handlers<br/>+ healthz"]
+    handlers -->|service calls| service["Campaign service<br/>+ challenge progression"]
+    service -->|Store| store["PostgreSQL adapter<br/>+ sqlc queries"]
+    store -->|SQL| database[(PostgreSQL<br/>campaign persistence)]
+    service -->|ModuleLookup| providerClient["Go Module Proxy client<br/>+ Doer fixture seam"]
+    providerClient -->|HTTPS| provider["Go Module Proxy<br/>live module metadata"]
+    spec["OpenAPI 3.0.3<br/>source contract"] -.->|generates| generation["ogen generation<br/>server + client"]
+    generation -.->|generated client| client
+    generation -.->|generated server| router
+
+    classDef actor fill:#E8F4F8,stroke:#0F8B8D,color:#143642
+    classDef cliNode fill:#FAE5C7,stroke:#0F8B8D,color:#143642
+    classDef generatedNode fill:#FFF9E6,stroke:#C28F00,color:#143642
+    classDef apiNode fill:#DDEBF7,stroke:#235789,color:#143642
+    classDef dataNode fill:#E8F5E9,stroke:#2E7D32,color:#143642
+    classDef externalNode fill:#FCE4EC,stroke:#AD1457,color:#143642
+
+    class player actor
+    class cli cliNode
+    class client,spec,generation generatedNode
+    class router,handlers,service apiNode
+    class store,database dataNode
+    class providerClient,provider externalNode
