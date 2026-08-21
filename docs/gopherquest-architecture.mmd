@@ -1,8 +1,8 @@
 flowchart LR
-    player[Player] -->|runs| cli["Cobra commands<br/>campaigns add / get / answer"]
+    player[Player] -->|runs| cli["Cobra CLI + Bubble Tea TUI<br/>add / new / list / get / play / answer / delete"]
     cli -->|typed calls| client["ogen generated client"]
     client -->|HTTP / JSON| router["ogen generated router / server"]
-    router -->|routes| handlers["Inbound handlers<br/>+ healthz"]
+    router -->|routes| handlers["Inbound handlers<br/>+ healthz + request logging"]
     handlers -->|service calls| service["Campaign service<br/>+ challenge progression"]
     service -->|Store| store["PostgreSQL adapter<br/>+ sqlc queries"]
     store -->|SQL| database[(PostgreSQL<br/>campaign persistence)]
