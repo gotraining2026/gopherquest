@@ -7,6 +7,7 @@ require (
 	github.com/go-faster/jx v1.2.0
 	github.com/lib/pq v1.10.9
 	github.com/ogen-go/ogen v1.24.0
+	github.com/spf13/cobra v1.9.1
 	github.com/sqlc-dev/sqlc v1.30.0
 )
 
@@ -45,7 +46,6 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/pflag v1.0.7 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/tetratelabs/wazero v1.9.0 // indirect

@@ -16,7 +16,7 @@ Go Module Proxy for live module information.
 - [x] PostgreSQL domain adapter and campaign service
 - [x] CRUD HTTP handlers, routing, and health check
 - [x] Challenge answer evaluation and progress updates
-- [ ] Cobra campaign commands
+- [x] Cobra campaign commands: `add`, `get`, and `answer`
 - [ ] Structured request logging
 - [x] Runtime configuration
 - [x] API container and Compose startup
