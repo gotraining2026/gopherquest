@@ -8,12 +8,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitlab.galvanize.com/cohorts/ent/sf/sdi-golang/sdi-go-2026-08-10/student-work/jiayang-wang/capstone/internal/api"
+	"gitlab.galvanize.com/cohorts/ent/sf/sdi-golang/sdi-go-2026-08-10/student-work/jiayang-wang/capstone/internal/tui"
 )
 
 // Client is the generated API surface used by the CLI commands.
 type Client interface {
 	CreateCampaign(context.Context, *api.CreateCampaignRequest) (api.CreateCampaignRes, error)
+	DeleteCampaign(context.Context, api.DeleteCampaignParams) (api.DeleteCampaignRes, error)
 	GetCampaign(context.Context, api.GetCampaignParams) (api.GetCampaignRes, error)
+	ListCampaigns(context.Context) (api.ListCampaignsRes, error)
 	SubmitAttempt(context.Context, *api.AttemptRequest, api.SubmitAttemptParams) (api.SubmitAttemptRes, error)
 }
 
@@ -29,7 +32,7 @@ func NewRootCommand(client Client) *cobra.Command {
 		Use:   "campaigns",
 		Short: "Manage learning campaigns",
 	}
-	campaigns.AddCommand(newAddCommand(client), newGetCommand(client), newAnswerCommand(client))
+	campaigns.AddCommand(newAddCommand(client), newListCommand(client), newGetCommand(client), newAnswerCommand(client), newPlayCommand(client), newDeleteCommand(client))
 	root.AddCommand(campaigns)
 	return root
 }
@@ -38,8 +41,9 @@ func newAddCommand(client Client) *cobra.Command {
 	var player, title, modulePath, difficulty string
 
 	cmd := &cobra.Command{
-		Use:   "add",
-		Short: "Create a campaign",
+		Use:     "add",
+		Aliases: []string{"new"},
+		Short:   "Create a campaign",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			response, err := client.CreateCampaign(cmd.Context(), &api.CreateCampaignRequest{
 				PlayerName: player,
@@ -66,6 +70,33 @@ func newAddCommand(client Client) *cobra.Command {
 	_ = cmd.MarkFlagRequired("title")
 	_ = cmd.MarkFlagRequired("module")
 	return cmd
+}
+
+func newListCommand(client Client) *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List saved campaigns",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			response, err := client.ListCampaigns(cmd.Context())
+			if err != nil {
+				return fmt.Errorf("list campaigns: %w", err)
+			}
+			campaigns, ok := response.(*api.ListCampaignsOKApplicationJSON)
+			if !ok {
+				return fmt.Errorf("list campaigns returned unexpected response %T", response)
+			}
+			if len(*campaigns) == 0 {
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), "No campaigns found")
+				return err
+			}
+			for _, item := range *campaigns {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%d  %-24s  %-8s  score=%d\n", item.ID, item.Title, item.Stage, item.Score); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}
 }
 
 func newGetCommand(client Client) *cobra.Command {
@@ -117,6 +148,46 @@ func newAnswerCommand(client Client) *cobra.Command {
 	cmd.Flags().StringVar(&answer, "answer", "", "challenge answer")
 	_ = cmd.MarkFlagRequired("id")
 	_ = cmd.MarkFlagRequired("answer")
+	return cmd
+}
+
+func newPlayCommand(client Client) *cobra.Command {
+	var id int64
+
+	cmd := &cobra.Command{
+		Use:   "play",
+		Short: "Play a campaign in an interactive terminal screen",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if err := tui.Run(client, id); err != nil {
+				return fmt.Errorf("play campaign: %w", err)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().Int64Var(&id, "id", 0, "campaign ID")
+	return cmd
+}
+
+func newDeleteCommand(client Client) *cobra.Command {
+	var id int64
+
+	cmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete one campaign",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			response, err := client.DeleteCampaign(cmd.Context(), api.DeleteCampaignParams{ID: id})
+			if err != nil {
+				return fmt.Errorf("delete campaign: %w", err)
+			}
+			if _, ok := response.(*api.DeleteCampaignNoContent); !ok {
+				return fmt.Errorf("delete campaign returned unexpected response %T", response)
+			}
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "Deleted campaign %d\n", id)
+			return err
+		},
+	}
+	cmd.Flags().Int64Var(&id, "id", 0, "campaign ID")
+	_ = cmd.MarkFlagRequired("id")
 	return cmd
 }
 
