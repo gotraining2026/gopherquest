@@ -17,7 +17,32 @@ Go Module Proxy for live module information.
 - [x] CRUD HTTP handlers, routing, and health check
 - [x] Challenge answer evaluation and progress updates
 - [x] Cobra campaign commands: `add`, `get`, and `answer`
-- [ ] Structured request logging
+- [x] Structured request logging
 - [x] Runtime configuration
 - [x] API container and Compose startup
 - [ ] Coverage closure, final checks, and demo documentation
+
+## Run the Demo
+
+Start the API and PostgreSQL:
+
+```text
+docker compose up --build -d
+```
+
+Create a campaign and use the ID printed by the command:
+
+```text
+go run ./cmd/gopherquestctl campaigns add --player "Demo Player" --title "Protocol Run" --module "github.com/spf13/cobra" --difficulty beginner
+# Replace 1 with the ID printed by the add command.
+go run ./cmd/gopherquestctl campaigns get --id 1
+go run ./cmd/gopherquestctl campaigns answer --id 1 --answer v1
+go run ./cmd/gopherquestctl campaigns answer --id 1 --answer errors.Is
+go run ./cmd/gopherquestctl campaigns answer --id 1 --answer channel
+```
+
+Stop the local services afterward:
+
+```text
+docker compose down
+```
