@@ -14,9 +14,10 @@ func Mux(handler api.Handler) (*http.ServeMux, error) {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/campaigns", generated)
-	mux.Handle("/campaigns/", generated)
-	mux.HandleFunc("GET /healthz", healthz)
+	logged := RequestLogger(generated)
+	mux.Handle("/campaigns", logged)
+	mux.Handle("/campaigns/", logged)
+	mux.Handle("GET /healthz", RequestLogger(http.HandlerFunc(healthz)))
 	return mux, nil
 }
 
