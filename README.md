@@ -4,6 +4,8 @@ GopherQuest is a local, single-player Go learning game. The Cobra CLI talks to
 a contract-first HTTP API, which persists campaigns in PostgreSQL and uses the
 Go Module Proxy for live module information.
 
+![Screenshot of GopherQuest](docs/gopherquest.png)
+
 ## Status
 
 - [x] Architecture context diagram
@@ -103,3 +105,5 @@ docker compose down
 To reset all local campaign data, use `docker compose down -v` before starting
 the services again. Database-wide reset is intentionally a Docker operation,
 not a CLI or API command.
+
+![Arch Diagram of GopherQuest](docs/gopherquest-context.jpg)
